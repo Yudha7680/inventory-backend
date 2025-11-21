@@ -1,62 +1,70 @@
 import express from "express";
-import db from "../db.js";
+import { authenticateToken } from "../middleware/authMiddleware.js";
+import db from "../config/db.js";
 
 const router = express.Router();
 
-// GET all items
-router.get("/", (req, res) => {
-    const sql = "SELECT * FROM items";
-    db.query(sql, (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
+// GET all items (protected)
+router.get("/", authenticateToken, async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT * FROM items ORDER BY id DESC");
+    res.json(rows);
+  } catch (err) {
+    console.error("GET ITEMS ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
-// GET single item by id
-router.get("/:id", (req, res) => {
-    const sql = "SELECT * FROM items WHERE id = ?";
-    db.query(sql, [req.params.id], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (results.length === 0) return res.status(404).json({ error: "Item not found" });
-        res.json(results[0]);
-    });
+// CREATE item (protected)
+router.post("/", authenticateToken, async (req, res) => {
+  const { name, quantity, price } = req.body;
+
+  if (!name || !quantity || !price) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    await db.query(
+      "INSERT INTO items (name, quantity, price) VALUES (?, ?, ?)",
+      [name, quantity, price]
+    );
+    res.json({ message: "Item added successfully" });
+  } catch (err) {
+    console.error("CREATE ITEM ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
-// POST new item
-router.post("/", (req, res) => {
-    const { name, quantity, price } = req.body;
-    if (!name || !quantity || !price) {
-        return res.status(400).json({ error: "name, quantity, and price are required" });
-    }
-    const sql = "INSERT INTO items (name, quantity, price) VALUES (?, ?, ?)";
-    db.query(sql, [name, quantity, price], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.status(201).json({ message: "Item added", id: results.insertId });
-    });
+// UPDATE item (protected)
+router.put("/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { name, quantity, price } = req.body;
+
+  try {
+    await db.query("UPDATE items SET name=?, quantity=?, price=? WHERE id=?", [
+      name,
+      quantity,
+      price,
+      id,
+    ]);
+    res.json({ message: "Item updated successfully" });
+  } catch (err) {
+    console.error("UPDATE ITEM ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
-// PUT update item
-router.put("/:id", (req, res) => {
-    const { name, quantity, price } = req.body;
-    if (!name || !quantity || !price) {
-        return res.status(400).json({ error: "name, quantity, and price are required" });
-    }
-    const sql = "UPDATE items SET name = ?, quantity = ?, price = ? WHERE id = ?";
-    db.query(sql, [name, quantity, price, req.params.id], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (results.affectedRows === 0) return res.status(404).json({ error: "Item not found" });
-        res.json({ message: "Item updated" });
-    });
-});
+// DELETE item (protected)
+router.delete("/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
 
-// DELETE item
-router.delete("/:id", (req, res) => {
-    const sql = "DELETE FROM items WHERE id = ?";
-    db.query(sql, [req.params.id], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (results.affectedRows === 0) return res.status(404).json({ error: "Item not found" });
-        res.json({ message: "Item deleted" });
-    });
+  try {
+    await db.query("DELETE FROM items WHERE id=?", [id]);
+    res.json({ message: "Item deleted successfully" });
+  } catch (err) {
+    console.error("DELETE ITEM ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 export default router;
