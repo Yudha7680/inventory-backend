@@ -1,26 +1,27 @@
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
+import itemsRoutes from "./routes/items.js";
 
 dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// ✅ Middleware
 app.use(express.json());
 
-// Routes
+// ✅ Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/items", itemsRoutes);
 
-// Root check
+// ✅ Root fallback (optional)
 app.get("/", (req, res) => {
-  res.send("API is running...");
+  res.json({ message: "API is running ✅" });
 });
 
-// Run server
-const PORT = process.env.PORT || 5000;
+// ✅ Railway uses process.env.PORT
+const PORT = process.env.PORT || 3001;
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
