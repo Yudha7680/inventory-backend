@@ -1,35 +1,38 @@
 import express from "express";
+import db from "../config/db.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
-import pool from "../config/db.js";
 
 const router = express.Router();
 
-// ✅ GET all items (protected)
+// ✅ GET all items (Protected)
 router.get("/", verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM items");
-    res.json(rows);
+    const [items] = await db.query("SELECT * FROM items");
+    res.json(items);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    console.error("GET ITEMS ERROR:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-// ✅ POST create item (protected)
+// ✅ POST create item (Protected)
 router.post("/", verifyToken, async (req, res) => {
   const { name, quantity } = req.body;
 
   if (!name || !quantity) {
-    return res.status(400).json({ message: "All fields are required" });
+    return res.status(400).json({ message: "Name & quantity required" });
   }
 
   try {
-    await pool.query("INSERT INTO items (name, quantity) VALUES (?, ?)", [
+    await db.query("INSERT INTO items (name, quantity) VALUES (?, ?)", [
       name,
       quantity,
     ]);
+
     res.json({ message: "Item added successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    console.error("ADD ITEM ERROR:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
