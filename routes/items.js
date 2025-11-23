@@ -36,4 +36,46 @@ router.post("/", verifyToken, async (req, res) => {
   }
 });
 
+// ✅ UPDATE ITEM
+router.put("/:id", verifyToken, async (req, res) => {
+  const { id } = req.params;
+  const { name, quantity } = req.body;
+
+  if (!name || !quantity) {
+    return res.status(400).json({ message: "Name & quantity required" });
+  }
+
+  try {
+    const [result] = await db.query(
+      "UPDATE items SET name = ?, quantity = ? WHERE id = ?",
+      [name, quantity, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    res.json({ message: "Item updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// ✅ DELETE ITEM
+router.delete("/:id", verifyToken, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [result] = await db.query("DELETE FROM items WHERE id = ?", [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    res.json({ message: "Item deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 export default router;
