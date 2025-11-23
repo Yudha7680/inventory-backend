@@ -15,14 +15,14 @@ router.get("/", verifyToken, async (req, res) => {
     const offset = (page - 1) * limit;
     const searchQuery = `%${search}%`;
 
-    // Ambil data sesuai search
-    const [items] = await pool.query(
+    // ✅ Ambil data sesuai search
+    const [items] = await db.query(
       "SELECT * FROM items WHERE name LIKE ? LIMIT ? OFFSET ?",
       [searchQuery, limit, offset]
     );
 
-    // Hitung total data sesuai search
-    const [countResult] = await pool.query(
+    // ✅ Hitung total data sesuai search
+    const [countResult] = await db.query(
       "SELECT COUNT(*) AS total FROM items WHERE name LIKE ?",
       [searchQuery]
     );
@@ -44,7 +44,7 @@ router.get("/", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ POST create item (Protected)
+// ✅ CREATE ITEM
 router.post("/", verifyToken, async (req, res) => {
   const { name, quantity } = req.body;
 
