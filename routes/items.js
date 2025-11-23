@@ -4,23 +4,43 @@ import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// ✅ GET ALL ITEMS + SEARCH
+// ✅ GET ITEMS WITH PAGINATION + SEARCH
 router.get("/", verifyToken, async (req, res) => {
-  const { search } = req.query;
-
   try {
-    let query = "SELECT * FROM items";
-    let params = [];
+    let { page = 1, limit = 10, search = "" } = req.query;
 
-    if (search) {
-      query += " WHERE name LIKE ?";
-      params.push(`%${search}%`);
-    }
+    page = parseInt(page);
+    limit = parseInt(limit);
 
-    const [rows] = await db.query(query, params);
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    const offset = (page - 1) * limit;
+    const searchQuery = `%${search}%`;
+
+    // Ambil data sesuai search
+    const [items] = await pool.query(
+      "SELECT * FROM items WHERE name LIKE ? LIMIT ? OFFSET ?",
+      [searchQuery, limit, offset]
+    );
+
+    // Hitung total data sesuai search
+    const [countResult] = await pool.query(
+      "SELECT COUNT(*) AS total FROM items WHERE name LIKE ?",
+      [searchQuery]
+    );
+
+    const totalItems = countResult[0].total;
+    const totalPages = Math.ceil(totalItems / limit);
+
+    res.json({
+      page,
+      limit,
+      search,
+      totalItems,
+      totalPages,
+      data: items,
+    });
+  } catch (error) {
+    console.error("SEARCH ERROR:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
