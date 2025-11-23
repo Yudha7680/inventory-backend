@@ -4,14 +4,23 @@ import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// ✅ GET all items (Protected)
+// ✅ GET ALL ITEMS + SEARCH
 router.get("/", verifyToken, async (req, res) => {
+  const { search } = req.query;
+
   try {
-    const [items] = await db.query("SELECT * FROM items");
-    res.json(items);
-  } catch (error) {
-    console.error("GET ITEMS ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    let query = "SELECT * FROM items";
+    let params = [];
+
+    if (search) {
+      query += " WHERE name LIKE ?";
+      params.push(`%${search}%`);
+    }
+
+    const [rows] = await db.query(query, params);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
