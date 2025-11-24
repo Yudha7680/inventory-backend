@@ -1,27 +1,45 @@
 import express from "express";
+import cors from "cors";
 import dotenv from "dotenv";
+import db from "./config/db.js";
 import authRoutes from "./routes/auth.js";
-import itemsRoutes from "./routes/items.js";
+import itemRoutes from "./routes/items.js";
 
 dotenv.config();
 
 const app = express();
 
 // ✅ Middleware
+app.use(
+  cors({
+    origin: ["http://localhost:5173"], // frontend local
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 app.use(express.json());
+
+// ✅ Test DB Connection
+db.getConnection((err) => {
+  if (err) {
+    console.error("Database connection failed:", err);
+  } else {
+    console.log("✅ MySQL Connected");
+  }
+});
 
 // ✅ Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/items", itemsRoutes);
+app.use("/api/items", itemRoutes);
 
-// ✅ Root fallback (optional)
+// ✅ Root (optional)
 app.get("/", (req, res) => {
-  res.json({ message: "API is running ✅" });
+  res.send("Backend is running ✅");
 });
 
-// ✅ Railway uses process.env.PORT
-const PORT = process.env.PORT || 3001;
-
+// ✅ Run Server
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
 });
