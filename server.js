@@ -9,10 +9,9 @@ dotenv.config();
 
 const app = express();
 
-// ✅ Middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173"], // frontend local
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
@@ -23,7 +22,7 @@ app.use(express.json());
 // ✅ Test DB Connection
 db.getConnection((err) => {
   if (err) {
-    console.error("Database connection failed:", err);
+    console.error("❌ Database connection failed:", err);
   } else {
     console.log("✅ MySQL Connected");
   }
@@ -33,7 +32,7 @@ db.getConnection((err) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
 
-// ✅ Root (optional)
+// ✅ Root Endpoint
 app.get("/", (req, res) => {
   res.send("Backend is running ✅");
 });
