@@ -15,13 +15,11 @@ router.get("/", verifyToken, async (req, res) => {
     const offset = (page - 1) * limit;
     const searchQuery = `%${search}%`;
 
-    // ✅ Ambil data sesuai search
     const [items] = await db.query(
       "SELECT * FROM items WHERE name LIKE ? LIMIT ? OFFSET ?",
       [searchQuery, limit, offset]
     );
 
-    // ✅ Hitung total data sesuai search
     const [countResult] = await db.query(
       "SELECT COUNT(*) AS total FROM items WHERE name LIKE ?",
       [searchQuery]
@@ -40,6 +38,24 @@ router.get("/", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error("SEARCH ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ✅ GET ITEM BY ID
+router.get("/:id", verifyToken, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [rows] = await db.query("SELECT * FROM items WHERE id = ?", [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("GET ITEM BY ID ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
